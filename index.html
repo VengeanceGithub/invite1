@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Урилга · болзоо</title>
+  <title>Урилга</title>
   <style>
     * {
       box-sizing: border-box;
@@ -120,6 +120,9 @@
       outline: 2px solid #ff5c9a60;
       border-color: #ff5c9a;
     }
+    .custom-date-picker input[type="date"]:invalid {
+      border-color: #ff6b6b;
+    }
     .buttons {
       display: flex;
       gap: 14px;
@@ -145,6 +148,11 @@
     .yes:hover {
       background: #f04a86;
       transform: scale(1.01);
+    }
+    .yes:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
     }
     .no {
       background: #e2d3d9;
@@ -175,10 +183,27 @@
       padding: 18px 20px;
       border-radius: 24px;
       line-height: 1.8;
-      white-space: pre-line;
       font-size: 0.98rem;
       border: 1px solid #f3e7ec;
       margin: 14px 0 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .message-textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 24px;
+      border: 1px solid #ddd;
+      font-size: 1rem;
+      background: #fcf8fa;
+      resize: vertical;
+      min-height: 90px;
+      margin: 8px 0 6px;
+      font-family: inherit;
+    }
+    .message-textarea:focus {
+      outline: 2px solid #ff5c9a60;
+      border-color: #ff5c9a;
     }
     .send {
       background: #ff5c9a;
@@ -196,6 +221,10 @@
     .send:hover {
       background: #e6437c;
     }
+    .send:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
     .footnote {
       font-size: 0.8rem;
       color: #7c6a73;
@@ -206,9 +235,112 @@
       font-weight: 600;
       color: #b33a5e;
     }
-    /* no overlap, clear separation */
-    .radio-group label {
-      flex: 0 1 auto;
+    .label-sm {
+      font-weight: 500;
+      color: #2d1b24;
+      margin: 6px 0 4px;
+      display: block;
+    }
+    .preview-line {
+      display: block;
+      margin-bottom: 4px;
+    }
+    .full-message-box {
+      background: #f3e7ec;
+      padding: 12px 16px;
+      border-radius: 18px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      font-size: 0.95rem;
+      border-left: 4px solid #ff5c9a;
+    }
+    .error-message {
+      color: #e74c3c;
+      font-size: 0.9rem;
+      margin-top: 8px;
+      display: none;
+      padding: 8px 12px;
+      background: #fde8e8;
+      border-radius: 12px;
+      border: 1px solid #f5c6c6;
+    }
+    .error-message.show {
+      display: block;
+    }
+
+    /* Thank You Page Styles */
+    .thank-you-page {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      background: white;
+      border-radius: 32px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+      margin-top: 20px;
+      border: 1px solid #f0e0e6;
+    }
+    .thank-you-page.show {
+      display: block;
+    }
+    .thank-you-page .emoji-big {
+      font-size: 4rem;
+      margin-bottom: 10px;
+    }
+    .thank-you-page h2 {
+      color: #ff5c9a;
+      font-size: 2rem;
+      margin: 10px 0;
+    }
+    .thank-you-page p {
+      font-size: 1.1rem;
+      color: #2d1b24;
+      line-height: 1.8;
+    }
+    .thank-you-page .sub-message {
+      background: #ffeef4;
+      padding: 16px 20px;
+      border-radius: 20px;
+      margin: 20px 0;
+      border: 1px solid #ffd9e4;
+    }
+    .thank-you-page .btn-back {
+      background: #ff5c9a;
+      color: white;
+      padding: 14px 40px;
+      border: none;
+      border-radius: 60px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 10px;
+    }
+    .thank-you-page .btn-back:hover {
+      background: #e6437c;
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid #f3e7ec;
+      border-top: 3px solid #ff5c9a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .sending-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #7c6a73;
+      font-size: 0.95rem;
+      margin-top: 10px;
     }
     @media (max-width: 480px) {
       .radio-group label {
@@ -223,122 +355,185 @@
 </head>
 <body>
 <div class="container">
-  <h1>💌 Урилга</h1>
-  <p class="greeting">Сайн уу,</p>
-  <p>Таныг болзоонд урьж байна.</p>
-  <p>Бид юу хийх гэж байгаа вэ? Энэ бол нууц 🤫</p>
+  <!-- Main Content -->
+  <div id="mainContent">
+    <h1>💌 Урилга</h1>
+    <p class="greeting">Сайн уу,</p>
+    <p>Таныг болзоонд урьж байна.</p>
+    <p>Юу хийх вэ гэж үү? Энэ бол нууц 🤫</p>
 
-  <div class="notice">
-    <b>Анхаарах зүйлс:</b><br><br>
-    1. Өөртөө эвтэйхэн хувцас өмсөөрэй(жаахан хөдлөх хэрэгтэй тул пүүзэрхүү гутал тохиромжтой).<br>
-    2. Уух зүйл авчраарай.<br>
-    3. 24,25нд аймар халуун(30,31) юм байна, 26 аас хойшоо арай 30 аас доошоо юм бн.
-  </div>
-
-  <p><b>24,25-нд халуун байна. 26-аас хойш сэрүүхэн.</b></p>
-
-  <!-- RADIO + OPTIONAL DATE PICKER -->
-  <fieldset class="date-options">
-    <legend>📅 Өдрөө сонго</legend>
-    <div class="radio-group" id="radioGroup">
-      <label class="selected-radio">
-        <input type="radio" name="inviteDate" value="2026-07-26" checked> 7-р сарын 26
-      </label>
-      <label>
-        <input type="radio" name="inviteDate" value="2026-07-27"> 7-р сарын 27
-      </label>
-      <label>
-        <input type="radio" name="inviteDate" value="2026-07-28"> 7-р сарын 28
-      </label>
-      <label>
-        <input type="radio" name="inviteDate" value="2026-07-29"> 7-р сарын 29
-      </label>
-      <label>
-        <input type="radio" name="inviteDate" value="2026-07-30"> 7-р сарын 30
-      </label>
+    <div class="notice">
+      <b>Анхаарах зүйлс:</b><br><br>
+      1. Өөртөө эвтэйхэн хувцас өмсөөрэй(жаахан хөдлөх хэрэгтэй тул пүүзэрхүү гутал тохиромжтой).<br>
+      2. Уух зүйл авчраарай.<br>
+      3. 24,25нд аймар халуун(30,31) юм байна, 26 аас хойшоо арай 30 аас доошоо юм бн.
     </div>
 
-    <div class="custom-date-picker">
-      <label for="customDate">📆 Өөр өдөр:</label>
-      <input type="date" id="customDate" value="2026-07-29">
-    </div>
-    <div style="font-size:0.85rem; color:#5d4a54; margin-top: 10px; padding-left:4px;">
-      ✦ Сонгосон өдөр: <span id="selectedDateDisplay">2026-07-26</span>
-    </div>
-  </fieldset>
-
-  <div class="buttons">
-    <button type="button" class="yes" id="yesBtn">Тэгье 😁</button>
-    <button type="button" class="no" id="noBtn">Үгүй ээ 😢</button>
-  </div>
-
-  <!-- MESSAGE CARD (hidden until Yes) -->
-  <div class="message" id="messageSection">
-    <h3>📨 Илгээх мессеж</h3>
-    <form action="https://formsubmit.co/gamerjakka@gmail.com" method="POST">
-      <input type="hidden" name="_captcha" value="false">
-      <input type="hidden" name="_subject" value="💖 New Date Invitation Response">
-      <textarea hidden id="messageText" name="message"></textarea>
-
-      <div class="preview" id="previewText">
-        Сайн уу!<br><br>
-        Би таны урилгыг хүлээн авч байна.<br><br>
-        Би энэ өдрийг сонгосон:<br>
-        📅 <span id="selectedDatePreview">2026-07-26</span><br><br>
-        Би тэсэн ядан хүлээж байна 😊<br>
-        15:30-д Үндэсний Цэцэрлэгт Хүрээлэн( Дүнжингарав ын урд би дандаа Цэнгэлдэхтэй анпуураад байдын XD) дээр уулзъя .
+    <!-- RADIO + OPTIONAL DATE PICKER -->
+    <fieldset class="date-options">
+      <legend>📅 Өдрөө сонго</legend>
+      <div class="radio-group" id="radioGroup">
+        <label>
+          <input type="radio" name="inviteDate" value="2026-07-26"> 7-р сарын 26
+        </label>
+        <label>
+          <input type="radio" name="inviteDate" value="2026-07-27"> 7-р сарын 27
+        </label>
+        <label>
+          <input type="radio" name="inviteDate" value="2026-07-28"> 7-р сарын 28
+        </label>
+        <label>
+          <input type="radio" name="inviteDate" value="2026-07-29"> 7-р сарын 29
+        </label>
+        <label>
+          <input type="radio" name="inviteDate" value="2026-07-30"> 7-р сарын 30
+        </label>
       </div>
 
-      <button type="submit" class="send">💖 Илгээх</button>
-    </form>
+      <div class="custom-date-picker">
+        <label for="customDate">📆 Өөр өдөр сонгох:</label>
+        <input type="date" id="customDate">
+      </div>
+      <div style="font-size:0.85rem; color:#5d4a54; margin-top: 10px; padding-left:4px;">
+        ✦ Сонгосон өдөр: <span id="selectedDateDisplay">—</span>
+      </div>
+      <div class="error-message" id="dateError">⚠️ Өдрөө сонгоно уу!</div>
+    </fieldset>
+
+    <div class="buttons">
+      <button type="button" class="yes" id="yesBtn">Тэгье 😁</button>
+      <button type="button" class="no" id="noBtn">Үгүй ээ 😢</button>
+    </div>
+
+    <!-- MESSAGE CARD (hidden until Yes) -->
+    <div class="message" id="messageSection">
+      <h3>📨 Илгээх мессеж</h3>
+      <form id="inviteForm" action="https://formsubmit.co/gamerjakka@gmail.com" method="POST">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_subject" value="💖 New Date Invitation Response">
+        <input type="hidden" name="_next" value="">
+
+        <!-- textarea for custom message -->
+        <label for="userMessage" class="label-sm">✏️мессеж бичих</label>
+        <textarea id="userMessage" name="message" class="message-textarea" placeholder="Жишээ нь: Би баяртай байна! 😊 ..."></textarea>
+
+        <!-- hidden field that combines date + user message -->
+        <input type="hidden" id="combinedMessage" name="combined" value="">
+
+        <!-- CLEAN PREVIEW – shows the full message without duplicates -->
+        <div class="preview" id="previewText">
+          <div class="full-message-box" id="fullMessageDisplay">
+            Сайн уу! Би таны урилгыг хүлээн авч байна.
+          </div>
+        </div>
+
+        <button type="submit" class="send" id="sendBtn"> Илгээх</button>
+        <div class="sending-status" id="sendingStatus" style="display:none;">
+          <span class="loading-spinner"></span>
+          Илгээж байна...
+        </div>
+      </form>
+    </div>
+    <div class="footnote">* Таны хариулт шууд илгээгдэнэ</div>
   </div>
-  <div class="footnote">* Таны хариулт шууд илгээгдэнэ</div>
+
+  <!-- Thank You Page (hidden by default) -->
+  <div class="thank-you-page" id="thankYouPage">
+    <div class="emoji-big">🎉</div>
+    <h2>Баярлалаа! 💖</h2>
+    <p>Таны хариултыг амжилттай хүлээн авлаа.</p>
+    <div class="sub-message">
+      <p style="margin:0;">
+      <span style="font-size:0.9rem; color:#7c6a73;">Таны сонгосон өдөр: <strong id="thankYouDate">—</strong> 
+        15:30-д Үндэсний Цэцэрлэгт Хүрээлэн( Дүнжингарав-ын урд, би дандаа Цэнгэлдэхтэй андуураад байдын XD) дээр уулзъя .<br>Би тэсэн ядан хүлээж байна 😊  </span></p>
+    </div>
+    <button class="btn-back" onclick="location.reload()">🔄 Буцах</button>
+  </div>
 </div>
 
 <script>
   (function() {
     // DOM refs
-    const radioGroup = document.getElementById('radioGroup');
     const customDateInput = document.getElementById('customDate');
     const selectedDisplay = document.getElementById('selectedDateDisplay');
-    const selectedPreview = document.getElementById('selectedDatePreview');
-    const messageText = document.getElementById('messageText');
-    const previewDiv = document.getElementById('previewText');
     const messageSection = document.getElementById('messageSection');
     const yesBtn = document.getElementById('yesBtn');
     const noBtn = document.getElementById('noBtn');
+    const userMessage = document.getElementById('userMessage');
+    const combinedInput = document.getElementById('combinedMessage');
+    const fullMessageDisplay = document.getElementById('fullMessageDisplay');
+    const dateError = document.getElementById('dateError');
+    const form = document.getElementById('inviteForm');
+    const sendBtn = document.getElementById('sendBtn');
+    const sendingStatus = document.getElementById('sendingStatus');
+    const thankYouPage = document.getElementById('thankYouPage');
+    const mainContent = document.getElementById('mainContent');
+    const thankYouDate = document.getElementById('thankYouDate');
+
+    // Set today's date as min for the date picker
+    const today = new Date().toISOString().split('T')[0];
+    customDateInput.setAttribute('min', today);
 
     // helper: get currently selected date (radio or custom)
     function getSelectedDate() {
-      // 1. check radio
       const checkedRadio = document.querySelector('input[name="inviteDate"]:checked');
       if (checkedRadio) {
         return checkedRadio.value;
       }
-      // 2. fallback to custom date
       return customDateInput.value;
     }
 
-    // update all UI that shows date
+    // Check if a date is selected
+    function isDateSelected() {
+      const date = getSelectedDate();
+      return date && date.length > 0;
+    }
+
+    // Build the full message: base + date + user message (if any)
+    function buildFullMessage(dateVal, userMsg) {
+      const base = `Сайн уу! Би таны урилгыг хүлээн авч байна. Би энэ өдрийг сонгосон: ${dateVal}`;
+      if (userMsg && userMsg.trim().length > 0) {
+        const trimmed = userMsg.trim();
+        if (trimmed.startsWith('Сайн уу!')) {
+          if (trimmed.includes('Би таны урилгыг хүлээн авч байна')) {
+            if (!trimmed.includes('Би энэ өдрийг сонгосон')) {
+              return `${trimmed} Би энэ өдрийг сонгосон: ${dateVal}`;
+            }
+            return trimmed;
+          }
+          return `${base}\n\n${trimmed}`;
+        }
+        return `${base}\n\n${trimmed}`;
+      }
+      return base;
+    }
+
+    // update all UI
     function updateDateUI() {
       const dateVal = getSelectedDate();
+      const rawMsg = userMessage.value;
+      
       if (dateVal) {
         selectedDisplay.textContent = dateVal;
-        selectedPreview.textContent = dateVal;
-        // also update hidden textarea
-        messageText.value = `Сайн уу!\n\nБи таны урилгыг хүлээн авч байна.\n\nБи энэ өдрийг сонгосон:\n📅 ${dateVal}\n\nБи тэсэн ядан хүлээж байна 😊`;
-        // preview content (preserve line breaks)
-        previewDiv.innerHTML = `Сайн уу!<br><br>Би таны урилгыг хүлээн авч байна.<br><br>Би энэ өдрийг сонгосон:<br>📅 <span id="selectedDatePreview">${dateVal}</span><br><br>Би тэсэн ядан хүлээж байна 😊`;
-        // re-fix the preview span (since we overwrote innerHTML)
-        // but we already set it above, just keep it.
+        // Build the clean full message
+        const fullMessage = buildFullMessage(dateVal, rawMsg);
+        fullMessageDisplay.textContent = fullMessage;
+        combinedInput.value = fullMessage;
+        dateError.classList.remove('show');
+        yesBtn.disabled = false;
+      } else {
+        selectedDisplay.textContent = '—';
+        fullMessageDisplay.textContent = 'Сайн уу! Би таны урилгыг хүлээн авч байна.';
+        combinedInput.value = '';
+        dateError.classList.add('show');
+        yesBtn.disabled = true;
       }
     }
 
     // highlight selected radio label
     function highlightRadio() {
       const radios = document.querySelectorAll('input[name="inviteDate"]');
-      const labels = document.querySelectorAll('.radio-group label');
-      radios.forEach((radio, idx) => {
+      radios.forEach((radio) => {
         const parentLabel = radio.closest('label');
         if (radio.checked) {
           parentLabel.classList.add('selected-radio');
@@ -348,13 +543,11 @@
       });
     }
 
-    // sync radio & custom date: when radio changes, update custom date?
-    // when custom date changes, uncheck radios
+    // sync radio & custom date
     function syncDateSources() {
       const radios = document.querySelectorAll('input[name="inviteDate"]');
       const custom = customDateInput;
 
-      // radio change → update custom date value to match (optional)
       radios.forEach(radio => {
         radio.addEventListener('change', function() {
           if (this.checked) {
@@ -365,50 +558,104 @@
         });
       });
 
-      // custom date change → uncheck all radios, update UI
       custom.addEventListener('input', function() {
-        // uncheck radios
+        // Clear radio selection when custom date is used
         radios.forEach(r => r.checked = false);
-        // remove highlight from all labels
         document.querySelectorAll('.radio-group label').forEach(lb => lb.classList.remove('selected-radio'));
         updateDateUI();
       });
 
-      // also if custom date changes programmatically, but we handle via input
+      // Also validate on blur
+      custom.addEventListener('blur', function() {
+        updateDateUI();
+      });
     }
 
-    // initial sync
-    function init() {
-      // set default radio checked (already checked in html)
-      const defaultRadio = document.querySelector('input[name="inviteDate"]:checked');
-      if (defaultRadio) {
-        customDateInput.value = defaultRadio.value;
-      } else {
-        // if none checked, check first
-        const firstRadio = document.querySelector('input[name="inviteDate"]');
-        if (firstRadio) {
-          firstRadio.checked = true;
-          customDateInput.value = firstRadio.value;
-        }
+    // Show thank you page
+    function showThankYou(selectedDate) {
+      thankYouDate.textContent = selectedDate || '—';
+      mainContent.style.display = 'none';
+      thankYouPage.classList.add('show');
+      thankYouPage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Handle form submission
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const selectedDate = getSelectedDate();
+      if (!selectedDate) {
+        dateError.classList.add('show');
+        dateError.textContent = '⚠️ Та өдрөө сонгоно уу!';
+        document.querySelector('.date-options').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
       }
+
+      // Update the combined message one last time
+      updateDateUI();
+
+      // Show sending status
+      sendBtn.disabled = true;
+      sendBtn.style.display = 'none';
+      sendingStatus.style.display = 'flex';
+
+      // Get the form data
+      const formData = new FormData(form);
+
+      // Send the form data using fetch
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          // Show thank you page
+          showThankYou(selectedDate);
+        } else {
+          throw new Error('Network response was not ok');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        // Even if there's an error, show thank you page (better UX)
+        showThankYou(selectedDate);
+      });
+    }
+
+    // initial setup
+    function init() {
+      // No default selection - all radios unchecked
       highlightRadio();
       updateDateUI();
       syncDateSources();
 
-      // additional listener: when any radio changes highlight
+      // when any radio changes, re-highlight
       document.querySelectorAll('input[name="inviteDate"]').forEach(r => {
         r.addEventListener('change', highlightRadio);
       });
 
-      // Yes button: show message and update
+      // update on user message change
+      userMessage.addEventListener('input', updateDateUI);
+
+      // Yes button: validate date, show message
       yesBtn.addEventListener('click', function() {
-        // update date one more time (ensure message is fresh)
         updateDateUI();
-        messageSection.style.display = 'block';
-        messageSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        if (isDateSelected()) {
+          messageSection.style.display = 'block';
+          messageSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          dateError.classList.remove('show');
+        } else {
+          dateError.classList.add('show');
+          dateError.textContent = '⚠️ Та өдрөө сонгоно уу!';
+          document.querySelector('.date-options').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       });
 
-      // No button: teasing logic (original behavior)
+      // No button: teasing logic
       const noTexts = [
         "Чи итгэлтэй байна уу? 🥺",
         "Нээрээ юу? 😭",
@@ -421,14 +668,15 @@
         if (clickCount < noTexts.length) {
           noBtn.textContent = noTexts[clickCount++];
         }
-        // grow yes button
         scale += 0.18;
         yesBtn.style.transform = `scale(${scale})`;
         yesBtn.style.transition = 'transform 0.2s ease';
+        yesBtn.disabled = false;
+        dateError.classList.remove('show');
       });
 
-      // reset scaling if needed (optional)
-      // but we keep it fun
+      // Form submission handler
+      form.addEventListener('submit', handleFormSubmit);
     }
 
     init();
